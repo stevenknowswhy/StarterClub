@@ -3,8 +3,11 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Check } from "lucide-react";
+import { supabase } from "@/lib/supabaseClient";
+import { useToast } from "@/context/ToastContext";
 
 export function WaitlistForm() {
+    const { toast } = useToast();
     const [status, setStatus] = useState<"idle" | "submitting" | "success">("idle");
     const [formData, setFormData] = useState({
         name: "",
@@ -15,9 +18,28 @@ export function WaitlistForm() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setStatus("submitting");
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        setStatus("success");
+
+        try {
+            const { error } = await supabase
+                .from("waitlist_submissions")
+                .insert([
+                    {
+                        full_name: formData.name,
+                        email: formData.email,
+                        project_idea: formData.identity,
+                        source: "main_form",
+                    },
+                ]);
+
+            if (error) throw error;
+            setStatus("success");
+            toast.success("You're on the list!");
+        } catch (error) {
+            console.error("Error submitting waitlist form:", error);
+            setStatus("idle");
+            // Optionally set an error state here to show to user
+            alert("Something went wrong. Please try again.");
+        }
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -60,6 +82,7 @@ export function WaitlistForm() {
                         initial={{ opacity: 1 }}
                         exit={{ opacity: 0, y: -20 }}
                         onSubmit={handleSubmit}
+                        data-custom-toast="true"
                         className="space-y-4"
                     >
                         <div>

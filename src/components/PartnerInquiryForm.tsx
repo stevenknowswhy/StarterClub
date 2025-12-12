@@ -2,8 +2,11 @@
 
 import { useState } from "react";
 import { ArrowRight, Check } from "lucide-react";
+import { supabase } from "@/lib/supabaseClient";
+import { useToast } from "@/context/ToastContext";
 
 export function PartnerInquiryForm({ onSuccess }: { onSuccess: () => void }) {
+    const { toast } = useToast();
     const [status, setStatus] = useState<"idle" | "submitting">("idle");
     const [formData, setFormData] = useState({
         name: "",
@@ -15,10 +18,30 @@ export function PartnerInquiryForm({ onSuccess }: { onSuccess: () => void }) {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setStatus("submitting");
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        onSuccess();
-        setStatus("idle");
+
+        try {
+            const { error } = await supabase
+                .from("partner_inquiries")
+                .insert([
+                    {
+                        full_name: formData.name,
+                        email: formData.email,
+                        organization: formData.organization,
+                        message: formData.message,
+                    },
+                ]);
+
+            if (error) throw error;
+
+            onSuccess();
+            setStatus("idle");
+            setFormData({ name: "", email: "", organization: "", message: "" }); // Clear form
+            toast.success("Request invitation sent!");
+        } catch (error) {
+            console.error("Error submitting partner form:", error);
+            setStatus("idle");
+            alert("Something went wrong. Please try again.");
+        }
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -26,7 +49,7 @@ export function PartnerInquiryForm({ onSuccess }: { onSuccess: () => void }) {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" data-custom-toast="true">
             <div>
                 <label htmlFor="partner-name" className="sr-only">Name</label>
                 <input

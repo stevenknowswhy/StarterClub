@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Check } from "lucide-react";
 import { PartnerInquiryForm } from "./PartnerInquiryForm";
@@ -17,9 +17,12 @@ export function PartnersModal({ isOpen, onClose, initialTab = "inquiry" }: Partn
     const [currentTab, setCurrentTab] = useState<ModalContent>(initialTab);
     const [isSuccess, setIsSuccess] = useState(false);
 
-    // Update internal state when prop changes, if needed
-    // In a real app, you might sync this more robustly or control it from outside.
-    // For now, we'll let the user switch tabs inside or rely on re-mounting/keying if the parent changes existing props.
+    // Sync internal state with prop when modal opens or tab changes
+    useEffect(() => {
+        if (isOpen) {
+            setCurrentTab(initialTab);
+        }
+    }, [isOpen, initialTab]);
 
     const handleSuccess = () => {
         setIsSuccess(true);

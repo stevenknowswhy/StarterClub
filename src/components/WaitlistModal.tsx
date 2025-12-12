@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Check, ArrowRight } from "lucide-react";
+import { supabase } from "@/lib/supabaseClient";
+import { useToast } from "@/context/ToastContext";
 
 interface WaitlistModalProps {
     isOpen: boolean;
@@ -10,6 +12,7 @@ interface WaitlistModalProps {
 }
 
 export function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
+    const { toast } = useToast();
     const [status, setStatus] = useState<"idle" | "submitting" | "success">("idle");
     const [formData, setFormData] = useState({
         name: "",
@@ -20,9 +23,27 @@ export function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setStatus("submitting");
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        setStatus("success");
+
+        try {
+            const { error } = await supabase
+                .from("waitlist_submissions")
+                .insert([
+                    {
+                        full_name: formData.name,
+                        email: formData.email,
+                        phone: formData.phone,
+                        source: "modal_popup",
+                    },
+                ]);
+
+            if (error) throw error;
+            setStatus("success");
+            toast.success("You're in! We'll be in touch.");
+        } catch (error) {
+            console.error("Error submitting modal form:", error);
+            setStatus("idle");
+            alert("Something went wrong. Please try again.");
+        }
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -106,7 +127,7 @@ export function WaitlistModal({ isOpen, onClose }: WaitlistModalProps) {
                                                 </p>
                                             </div>
 
-                                            <form onSubmit={handleSubmit} className="space-y-4">
+                                            <form onSubmit={handleSubmit} className="space-y-4" data-custom-toast="true">
                                                 <div>
                                                     <label htmlFor="modal-name" className="sr-only">Name</label>
                                                     <input

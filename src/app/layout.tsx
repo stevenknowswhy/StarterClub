@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Bebas_Neue, Inter } from "next/font/google";
 import "./globals.css";
+import { ToastProvider } from "@/context/ToastContext";
+import { Toaster } from "@/components/ui/Toaster";
+import { GlobalFormListener } from "@/components/GlobalFormListener";
 
 const bebasNeue = Bebas_Neue({
   variable: "--font-bebas-neue",
@@ -28,7 +31,11 @@ export default function RootLayout({
       <body
         className={`${bebasNeue.variable} ${inter.variable} antialiased bg-background text-foreground`}
       >
-        {children}
+        <ToastProvider>
+          {children}
+          <Toaster />
+          <GlobalFormListener />
+        </ToastProvider>
       </body>
     </html>
   );
